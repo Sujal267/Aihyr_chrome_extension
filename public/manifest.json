@@ -1,0 +1,16 @@
+{
+    "manifest_version": 3,
+    "name": "AiHYR Chrome extension",
+    "version": "1.0.0",
+    "description": "Resume uploading chromme extension",
+    "action": {
+        "default_popup": "index.html"
+    },
+    "permissions": [
+        "scripting"
+    ],
+    "host_permissions": [
+        "https://*/*",
+        "http://*/*"
+    ]
+}
