@@ -23,11 +23,10 @@ function App() {
 
   useEffect(() => {
 
-  }, [company_id, job_id, userName]);
+  }, [company_id, job_id, userName, statetoken]);
 
   async function fetchPost(newtoken) {
-    console.log(newtoken)
-    // setStateToken(newtoken);
+    setStateToken(newtoken)
 
     // fetch all the job postings from aihyr backend
     fetch('https://providentiainterviewbackend.azurewebsites.net/labs/jobpostings', {
@@ -43,6 +42,10 @@ function App() {
       })
       .then(data => {
         //store the data in a variable
+
+        console.log(data[0].job)
+        setComapny_id(String(data[0].job.company_id))
+        setJob_id(String(data[0].job._id))
         setJobdata(data);
       })
       .catch(error => {
@@ -53,11 +56,12 @@ function App() {
   // below function create a button on the portal for uploading resume
 
   async function createButton() {
-
+    console.log("called")
+    console.log(company_id)
     let [tab] = await chrome.tabs.query({ active: true });
     chrome.scripting.executeScript({
       target: { tabId: tab.id },
-      func: async (companyid, jobid) => {
+      func: async (companyid, jobid,token) => {
         let tabUrl = window.location.href;
         // URL of current job portal
         tabUrl = String(tabUrl);
@@ -124,12 +128,14 @@ function App() {
               const response = await fetch(`https://providentiainterviewbackend.azurewebsites.net/labs/evaluate/resumes/${newcompanyid}/${newjobid}/${source}`, {
                 method: 'POST',
                 body: formData,
-                 // <-------- Todo---------> see here i have hardcoded the token, try to make it dynnamic like there is variable named token, see how can you use it here.
+                // <-------- Todo---------> see here i have hardcoded the token, try to make it dynnamic like there is variable named token, see how can you use it here.
                 headers: {
-                  'Authorization': "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NDc2MmE5NmNiNzFlMDc1NWE2OGEyZmMiLCJpYXQiOjE3MTEzNjg4NDUsImV4cCI6MTcxMTYyODA0NX0.ZJ9WR3rFIYEyQW2rq836MoTq3Kz55RB-seO2Kn7k_Vc",
+                  'Authorization': `Bearer ${token}`,
                 },
               });
-              if (response.status == 404) {
+              const responseData = await response.json();
+              if (responseData.status == 401) {
+                element.removeChild(paraStatus);
                 alert("Error in uplading resume")
                 throw new Error(`HTTP error! Status: ${response.status}`);
               }
@@ -140,18 +146,18 @@ function App() {
                 setTimeout(function () {
                   element.removeChild(paraStatus);
                 }, 1500);
-                const responseData = await response.json();
                 console.log('Upload successful', responseData);
               }
             } catch (error) {
               console.error('Error uploading PDF:');
+              element.removeChild(paraStatus);
               alert("Error in uplading resume... Try once again")
             }
           });
           element.appendChild(uploadButton);
         }
       },
-      args: [company_id, job_id]
+      args: [company_id, job_id,statetoken]
     })
   }
 
