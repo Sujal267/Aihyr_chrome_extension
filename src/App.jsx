@@ -12,9 +12,6 @@ import './App.css'
 
 function App() {
   const selectStyle = { backgroundColor: 'rgb(235, 242, 250)', color: 'black', padding: '10px', borderRadius: '5px', border: "1px solid black", fontSize: '16px', cursor: 'pointer', width: "150px" };
-  const [url, setUrl] = useState("")
-  const [file, setFile] = useState(null);
-  const [jobPost, setJobPost] = useState([])
   const [logedIn, setLogedIn] = useState(0)
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("")
@@ -31,6 +28,8 @@ function App() {
   async function fetchPost(newtoken) {
     console.log(newtoken)
     // setStateToken(newtoken);
+
+    // fetch all the job postings from aihyr backend
     fetch('https://providentiainterviewbackend.azurewebsites.net/labs/jobpostings', {
       headers: {
         'Authorization': `Bearer ${newtoken}`
@@ -43,14 +42,15 @@ function App() {
         return response.json();
       })
       .then(data => {
+        //store the data in a variable
         setJobdata(data);
-        const jobRoles = data.map(job => job.job.job_role);
-        setJobPost(jobRoles);
       })
       .catch(error => {
         console.error('There was a problem with the fetch operation:', error);
       });
   }
+
+  // below function create a button on the portal for uploading resume
 
   async function createButton() {
 
@@ -59,9 +59,11 @@ function App() {
       target: { tabId: tab.id },
       func: async (companyid, jobid) => {
         let tabUrl = window.location.href;
+        // URL of current job portal
         tabUrl = String(tabUrl);
         var element = null
         if (tabUrl.includes("hirist") || tabUrl.includes("iimjobs")) {
+          // get the path of specific div where we need to add that button using Xpath
           element = document.evaluate(
             '/html/body/div[22]/div[2]/div[1]/div/div[1]/div[1]/div[2]/div[3]',
             document,
@@ -71,6 +73,7 @@ function App() {
           ).singleNodeValue;
         }
         if (!element) {
+          // if the provided Xpath is wrong
           alert("error in finding element")
         }
         else {
@@ -82,14 +85,17 @@ function App() {
           uploadButton.style.border = "none";
           uploadButton.style.borderRadius = "5px";
           uploadButton.style.cursor = "pointer";
+          // below function handle the request of uplaoding resume to aihyr backend
           uploadButton.addEventListener("click", async function () {
+            // get the id where the download resume option is located on portal
             let resume = document.getElementsByClassName("download candidateDownloadResume");
-            // console.log(resume[0].dataset.href);
+            // Url for downloading the resume
             let resumeUrl = resume[0].dataset.href;
             console.log(resumeUrl);
             const pdfUrl = String(resumeUrl);
 
             try {
+              // this for showing the status of request
               let paraStatus = document.createElement("p");
               paraStatus.textContent = "Uploading resume...."
               paraStatus.style.margin = "5px";
@@ -99,22 +105,26 @@ function App() {
               paraStatus.style.border = "2px solid green";
               paraStatus.style.borderRadius = "7px";
               element.appendChild(paraStatus);
+              // downloads the pdf from that url
               const pdfResponse = await fetch(pdfUrl);
               const pdfBlob = await pdfResponse.blob();
+              // As of now source is hardcoded
+
+              //<-------- Todo---------> - get the sorce of resume from url, make it dynnamic
               const source = "iimJobs";
               let fileName = pdfUrl.match(/\/resume\/([^\/]+)\//)[1];
+              // this convert file to .pdf format
               const pdfFile = new File([pdfBlob], `${fileName}.pdf`, { type: 'application/pdf' });
               let newcompanyid = companyid
               let newjobid = jobid
               const formData = new FormData();
-              console.log("asdasfd");
-              // console.log(statetoken);
 
               formData.append(fileName, pdfFile);
-
+              // post request for uploading resume
               const response = await fetch(`https://providentiainterviewbackend.azurewebsites.net/labs/evaluate/resumes/${newcompanyid}/${newjobid}/${source}`, {
                 method: 'POST',
                 body: formData,
+                 // <-------- Todo---------> see here i have hardcoded the token, try to make it dynnamic like there is variable named token, see how can you use it here.
                 headers: {
                   'Authorization': "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NDc2MmE5NmNiNzFlMDc1NWE2OGEyZmMiLCJpYXQiOjE3MTEzNjg4NDUsImV4cCI6MTcxMTYyODA0NX0.ZJ9WR3rFIYEyQW2rq836MoTq3Kz55RB-seO2Kn7k_Vc",
                 },
@@ -133,11 +143,9 @@ function App() {
                 const responseData = await response.json();
                 console.log('Upload successful', responseData);
               }
-              // Handle response as needed
             } catch (error) {
               console.error('Error uploading PDF:');
               alert("Error in uplading resume... Try once again")
-              // Handle error
             }
           });
           element.appendChild(uploadButton);
@@ -243,6 +251,10 @@ function App() {
               <h2>Hello {userName}</h2>
               <h3>Select a job posting to upload Resume</h3>
             </div>
+            {/* Different job postings are listed below
+                <--------- Todo ----------> there should be an input where user types the company name, 
+                it should display all the job postings specific to that company.
+             */}
             <select style={selectStyle} onChange={(e) => {
               const arrayindex = e.target.value;
               setComapny_id(String(jobdata[arrayindex].job.company_id))
@@ -263,106 +275,9 @@ function App() {
     </>
   )
 
-
-
-
-
-
-
-
-
-
-
-
-  // if (logedIn === 0) {
-  //   return (
-  //     <>
-  //       <div>
-  //         <div>
-  //           <h1 style={{ color: "#224C84" }}>
-  //             Welcome to{" "}
-  //             <div style={{ marginBottom: "-60px", marginTop: "-30px" }}>
-  //               <a href="https://aihyr.com/" target="_blank">
-  //                 <img src={viteLogo} width="150px" alt="AiHyr" />
-  //               </a>
-  //             </div>
-  //           </h1>
-  //         </div>
-  //         <div onClick={() => { setLogedIn(1) }}>
-  //           <div>
-  //             <a href="https://www.linkedin.com/" target="_blank">
-  //               <img style={{ margin: "5px", backgroundColor: "white" }} src={linkedInLogo} alt="LinkedIn" />
-  //             </a>
-  //             <a href="https://www.naukri.com/" target="_blank">
-  //               <img style={{ margin: "5px", backgroundColor: "white" }} src={naukriLogo} alt="Naukri" />
-  //             </a>
-  //             <a href="https://in.indeed.com/" target="_blank">
-  //               <img style={{ margin: "5px", backgroundColor: "white" }} src={indeedLogo} alt="Indeed" />
-  //             </a>
-  //           </div>
-  //           <div>
-  //             <a href="https://www.iimjobs.com/" target="_blank">
-  //               <img style={{ margin: "5px", backgroundColor: "white" }} src={iimJobsLogo} alt="IIMJobs" />
-  //             </a>
-  //             <a href="https://www.hirist.tech/" target="_blank">
-  //               <img style={{ margin: "5px", backgroundColor: "white" }} src={hiristLogo} alt="Hirist" />
-  //             </a>
-  //             <a href="https://www.ccbp.in/" target="_blank">
-  //               <img style={{ margin: "5px", backgroundColor: "white" }} src={nxtwaveLogo} alt="Nxtwave" />
-  //             </a>
-  //           </div>
-  //         </div>
-  //       </div>
-  //     </>
-  //   );
-  // }
-  // if (logedIn === 1) {
-  //   return (
-  //     <>
-  //       <h2 style={{ color: "#224C84" }}>Sign into AiHYR Account</h2>
-  //       <div>
-  //         <div>
-  //           <h3 style={{ color: "#224C84", marginBottom: "-7px", textAlign: "left", marginLeft: "17px" }}>Username</h3>
-  //         </div>
-  //         <input style={{ color: "#224C84" }} className='input-field' value={email} onChange={(e) => { setEmail(e.target.value); }} placeholder='Enter Email'></input>
-  //       </div>
-  //       <div>
-  //         <div>
-  //           <h3 style={{ color: "#224C84", marginBottom: "-7px", textAlign: "left", marginLeft: "17px" }}>Password</h3>
-  //         </div>
-  //         <input style={{ color: "#224C84" }} className='input-field' type='password' value={password} onChange={(e) => { setPassword(e.target.value); }} placeholder='Enter Password'></input>
-  //       </div>
-  //       <div style={{ margin: "10px", padding: "5px" }}>
-  //         <button onClick={loginClick} style={{ fontSize: "15px" }}>Login</button>
-  //       </div>
-  //     </>
-  //   );
-  // }
-  // return (
-  //   <>
-  //     <div >
-  //       <div style={{ margin: "10px", color: "#224C84" }}>
-  //         <h2>Hello {userName}</h2>
-  //         <h3>Select a job posting to upload Resume</h3>
-  //       </div>
-  //       <select style={selectStyle} onChange={(e) => {
-  //         const arrayindex = e.target.value;
-  //         setComapny_id(String(jobdata[arrayindex].job.company_id))
-  //         setJob_id(String(jobdata[arrayindex].job._id))
-  //       }}>
-  //         {jobdata.map((value, index) => (
-  //           <option key={index} value={index}>
-  //             {value.job.job_role}
-  //           </option>
-  //         ))}
-  //       </select>
-  //       <div className="card">
-  //         <button onClick={createButton} style={{ fontSize: "15px" }}>Done</button>
-  //       </div>
-  //     </div>
-  //   </>
-  // );
-
 }
 
 export default App
+
+// See there is lot of code repetition, try minimize it and try optimize the code a little bit if possible
+
